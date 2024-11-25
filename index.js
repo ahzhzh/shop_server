@@ -82,10 +82,40 @@ async function convertTextToSpeech(text) {
   return response.audioContent.toString('base64');
 }
 
-// Gemini로 응답 생성하는 함수
+// Gemini로 응답 생성하는 함수 수정
 async function generateGeminiResponse(prompt) {
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  try {
+    // 모든 텍스트를 소문자로 변환하여 비교
+    const lowerPrompt = prompt.toLowerCase();
+    // A상품 정보 보기 명령어 처리
+    if ((lowerPrompt.includes('정보') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘')) 
+      && (lowerPrompt.includes('a상품') || lowerPrompt.includes('에이상품') || lowerPrompt.includes('a 상품') || lowerPrompt.includes('에이 상품'))) {
+    return "네, A상품의 상세 정보 페이지로 이동하겠습니다.";
+    }
+    // 장바구니 추가 명령어 처리
+    if ((lowerPrompt.includes('장바구니') || lowerPrompt.includes('담아줘') || lowerPrompt.includes('추가해줘')) 
+        && (lowerPrompt.includes('a상품') || lowerPrompt.includes('에이상품') || lowerPrompt.includes('a 상품') || lowerPrompt.includes('에이 상품'))) {
+      return "네, A상품을 장바구니에 담도록 하겠습니다.";
+    }
+    // 음성 인식 종료 명령어 처리
+    if (prompt.includes('꺼 줘') || prompt.includes('종료') || prompt.includes('그만')) {
+      return "네, 음성 인식을 종료하겠습니다.";
+    }
+    // 장바구니 확인 명령어 처리
+    if (lowerPrompt.includes('장바구니') && (lowerPrompt.includes('확인') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('열어줘'))) {
+      return "네, 장바구니 페이지로 이동하겠습니다.";
+    }
+    // 스크롤 관련 명령어 처리
+    if (prompt.includes('스크롤') || prompt.includes('내려')) {
+      return "네, 스크롤을 내리도록 하겠습니다.";
+    }
+    // 기본 Gemini 응답 생성
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    console.error('Gemini response error:', error);
+    return "죄송합니다. 응답 생성 중 오류가 발생했습니다.";
+  }
 }
 
 // 스트리밍 STT 설정
@@ -97,7 +127,6 @@ const streamingConfig = {
     enableAutomaticPunctuation: true,
     model: 'default',
     useEnhanced: true
-
   },
   interimResults: true,
 };
@@ -110,7 +139,6 @@ wss.on('connection', (ws) => {
     try {
       const data = JSON.parse(message.toString());
       
-
       if (data.type === 'start') {
         console.log('\n=== 음성 인식 시작 ===');
         recognizeStream = speechClient
@@ -124,19 +152,20 @@ wss.on('connection', (ws) => {
               const transcript = data.results[0].alternatives[0].transcript;
               
               if (data.results[0].isFinal) {
-                console.log('\n🎤 최종 인식 결과:', transcript);
+                console.log('\n사용자: ', transcript); // 최종 음성 인식 결과
                 const geminiResponse = await generateGeminiResponse(transcript);
-                console.log('🤖 Gemini 응답:', geminiResponse);
+                console.log('Gemini: ', geminiResponse); // Gemini 응답
                 const audioContent = await convertTextToSpeech(geminiResponse);
                 
                 ws.send(JSON.stringify({
                   type: 'result',
                   transcript,
                   response: geminiResponse,
-                  audio: audioContent
+                  audio: audioContent,
+                  shouldScroll: transcript.includes('스크롤') || transcript.includes('내려')
                 }));
               } else {
-                console.log('🎤 인식 중...:', transcript);
+                console.log('인식 중: ', transcript); // 중간 음성 인식 결과
                 ws.send(JSON.stringify({
                   type: 'interim',
                   transcript
@@ -147,7 +176,6 @@ wss.on('connection', (ws) => {
       } else if (data.type === 'audio') {
         if (recognizeStream) {
           recognizeStream.write(Buffer.from(data.audio, 'base64'));
-          
         }
       } else if (data.type === 'stop') {
         console.log('=== 음성 인식 종료 ===\n');
