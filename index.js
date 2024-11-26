@@ -52,7 +52,7 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('your gemini key');
+const genAI = new GoogleGenerativeAI('your gemini key here');
 const model = genAI.getGenerativeModel({ model : 'gemini-pro'});
 
 // Google Cloud 클라이언트 초기화
@@ -108,6 +108,14 @@ async function generateGeminiResponse(prompt) {
     // 스크롤 관련 명령어 처리
     if (prompt.includes('스크롤') || prompt.includes('내려')) {
       return "네, 스크롤을 내리도록 하겠습니다.";
+    }
+    // 뒤로가기 명령어 처리
+    if (prompt.includes('뒤로') || prompt.includes('이전')) {
+      return "네, 이전 페이지로 이동하겠습니다.";
+    }
+    // 결제 명령어 처리
+    if (lowerPrompt.includes('결제') || lowerPrompt.includes('주문') || lowerPrompt.includes('구매')) {
+      return "네, 결제 페이지로 이동하겠습니다.";
     }
     // 기본 Gemini 응답 생성
     const result = await model.generateContent(prompt);
