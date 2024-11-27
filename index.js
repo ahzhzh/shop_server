@@ -52,7 +52,7 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('AIzaSyA4cVA7LiVSXm3JlzWJwhYbawmACPsnMYE');
+const genAI = new GoogleGenerativeAI('your gemini key');
 const model = genAI.getGenerativeModel({ model : 'gemini-pro'});
 
 // Google Cloud 클라이언트 초기화
