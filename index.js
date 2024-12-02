@@ -87,7 +87,7 @@ async function generateGeminiResponse(prompt) {
   try {
     // 모든 텍스트를 소문자로 변환하여 비교
     const lowerPrompt = prompt.toLowerCase();
-      
+    
     // A상품 정보 보기 명령어 처리
     if ((lowerPrompt.includes('정보') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘')) 
       && (lowerPrompt.includes('a상품') || lowerPrompt.includes('에이상품') || lowerPrompt.includes('a 상품') || lowerPrompt.includes('에이 상품'))) {
@@ -97,6 +97,11 @@ async function generateGeminiResponse(prompt) {
     if ((lowerPrompt.includes('장바구니') || lowerPrompt.includes('담아줘') || lowerPrompt.includes('추가해줘')) 
         && (lowerPrompt.includes('a상품') || lowerPrompt.includes('에이상품') || lowerPrompt.includes('a 상품') || lowerPrompt.includes('에이 상품'))) {
       return "네, A상품을 장바구니에 담도록 하겠습니다.";
+    }
+    if ((lowerPrompt.includes('장바구니') || lowerPrompt.includes('담아줘') || lowerPrompt.includes('추가해줘')) 
+      && (lowerPrompt.includes('라이젠5') || lowerPrompt.includes('라이젠 5') || 
+          lowerPrompt.includes('라이젠 5세대') || lowerPrompt.includes('라이젠5 5세대'))) {
+      return "네, 라이젠5 5세대 제품을 장바구니에 담도록 하겠습니다.";
     }
     // 음성 인식 종료 명령어 처리
     if (prompt.includes('꺼 줘') || prompt.includes('종료') || prompt.includes('그만')) {
