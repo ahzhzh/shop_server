@@ -87,18 +87,6 @@ async function generateGeminiResponse(prompt) {
   try {
     // 모든 텍스트를 소문자로 변환하여 비교
     const lowerPrompt = prompt.toLowerCase();
-    
-    // NEW 섹션 보기 명령어 처리
-    if ((lowerPrompt.includes('new') || lowerPrompt.includes('뉴') || lowerPrompt.includes('새 상품')) 
-        && (lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘'))) {
-      return "네, NEW 상품 섹션으로 이동하겠습니다.";
-    }
-    
-    // 인기 상품 섹션 보기 명령어 처리
-    if ((lowerPrompt.includes('인기') || lowerPrompt.includes('인기 상품')) 
-        && (lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘'))) {
-      return "네, 인기 상품 섹션으로 이동하겠습니다.";
-    }
       
     // A상품 정보 보기 명령어 처리
     if ((lowerPrompt.includes('정보') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘')) 
@@ -122,13 +110,35 @@ async function generateGeminiResponse(prompt) {
     if (prompt.includes('스크롤') || prompt.includes('내려')) {
       return "네, 스크롤을 내리도록 하겠습니다.";
     }
+    if (lowerPrompt.includes('위로') || lowerPrompt.includes('올려')) {
+      return "네, 스크롤을 위로 올리도록 하겠습니다.";
+    }
     // 뒤로가기 명령어 처리
     if (prompt.includes('뒤로') || prompt.includes('이전')) {
       return "네, 이전 페이지로 이동하겠습니다.";
     }
-    // 결제 명령어 처리
-    if (lowerPrompt.includes('결제') || lowerPrompt.includes('주문') || lowerPrompt.includes('구매')) {
-      return "네, 결제 페이지로 이동하겠습니다.";
+    // 결제 관련 명령어 처리
+    if (lowerPrompt.includes('결제')) {
+      if (lowerPrompt.includes('페이지') || lowerPrompt.includes('이동')) {
+        return "네, 결제 페이지로 이동하겠습니다.";
+      } else {
+        return "네, 결제하겠습니다.";
+      }
+    }
+    if (lowerPrompt.includes('주문') || lowerPrompt.includes('구매')) {
+      if (lowerPrompt.includes('페이지') || lowerPrompt.includes('이동')) {
+        return "네, 결제 페이지로 이동하겠습니다.";
+      } else {
+        return "네, 결제하겠습니다.";
+      }
+    }
+    // NEW 섹션 명령어 처리
+    if (lowerPrompt.includes('new') || lowerPrompt.includes('뉴') || lowerPrompt.includes('새로운')) {
+      return "네, NEW 섹션으로 이동하겠습니다.";
+    }
+    // 인기 상품 섹션 명령어 처리
+    if (lowerPrompt.includes('인기') || lowerPrompt.includes('인기상품') || lowerPrompt.includes('인기 상품')) {
+      return "네, 인기 상품 섹션으로 이동하겠습니다.";
     }
     // 기본 Gemini 응답 생성
     const result = await model.generateContent(prompt);
