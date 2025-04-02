@@ -52,8 +52,8 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('your gemini key');
-const model = genAI.getGenerativeModel({ model : 'gemini-pro'});
+const genAI = new GoogleGenerativeAI('your key');
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Google Cloud 클라이언트 초기화
 const speechClient = new SpeechClient();
@@ -88,29 +88,11 @@ async function generateGeminiResponse(prompt) {
     // 모든 텍스트를 소문자로 변환하여 비교
     const lowerPrompt = prompt.toLowerCase();
     
-    // A상품 정보 보기 명령어 처리
-    if ((lowerPrompt.includes('정보') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘')) 
-      && (lowerPrompt.includes('a상품') || lowerPrompt.includes('에이상품') || lowerPrompt.includes('a 상품') || lowerPrompt.includes('에이 상품'))) {
-    return "네, A상품의 상세 정보 페이지로 이동하겠습니다.";
-    }
-    // 장바구니 추가 명령어 처리
-    if ((lowerPrompt.includes('장바구니') || lowerPrompt.includes('담아줘') || lowerPrompt.includes('추가해줘')) 
-        && (lowerPrompt.includes('a상품') || lowerPrompt.includes('에이상품') || lowerPrompt.includes('a 상품') || lowerPrompt.includes('에이 상품'))) {
-      return "네, A상품을 장바구니에 담도록 하겠습니다.";
-    }
-    if ((lowerPrompt.includes('장바구니') || lowerPrompt.includes('담아줘') || lowerPrompt.includes('추가해줘')) 
-      && (lowerPrompt.includes('라이젠5') || lowerPrompt.includes('라이젠 5') || 
-          lowerPrompt.includes('라이젠 5세대') || lowerPrompt.includes('라이젠5 5세대'))) {
-      return "네, 라이젠5 5세대 제품을 장바구니에 담도록 하겠습니다.";
-    }
     // 음성 인식 종료 명령어 처리
     if (prompt.includes('꺼 줘') || prompt.includes('종료') || prompt.includes('그만')) {
       return "네, 음성 인식을 종료하겠습니다.";
     }
-    // 장바구니 확인 명령어 처리
-    if (lowerPrompt.includes('장바구니') && (lowerPrompt.includes('확인') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('열어줘'))) {
-      return "네, 장바구니 페이지로 이동하겠습니다.";
-    }
+    
     // 스크롤 관련 명령어 처리
     if (prompt.includes('스크롤') || prompt.includes('내려')) {
       return "네, 스크롤을 내리도록 하겠습니다.";
@@ -118,10 +100,12 @@ async function generateGeminiResponse(prompt) {
     if (lowerPrompt.includes('위로') || lowerPrompt.includes('올려')) {
       return "네, 스크롤을 위로 올리도록 하겠습니다.";
     }
+    
     // 뒤로가기 명령어 처리
     if (prompt.includes('뒤로') || prompt.includes('이전')) {
       return "네, 이전 페이지로 이동하겠습니다.";
     }
+    
     // 결제 관련 명령어 처리
     if (lowerPrompt.includes('결제')) {
       if (lowerPrompt.includes('페이지') || lowerPrompt.includes('이동')) {
@@ -137,16 +121,30 @@ async function generateGeminiResponse(prompt) {
         return "네, 결제하겠습니다.";
       }
     }
+    
     // NEW 섹션 명령어 처리
     if (lowerPrompt.includes('new') || lowerPrompt.includes('뉴') || lowerPrompt.includes('새로운')) {
       return "네, NEW 섹션으로 이동하겠습니다.";
     }
+    
     // 인기 상품 섹션 명령어 처리
     if (lowerPrompt.includes('인기') || lowerPrompt.includes('인기상품') || lowerPrompt.includes('인기 상품')) {
       return "네, 인기 상품 섹션으로 이동하겠습니다.";
     }
+    
+    // 데이터베이스에서 상품 정보 가져오기
+    const [products] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
+    
+    // 상품 정보를 문자열로 변환
+    const productInfo = products.map(p => 
+      `상품명: ${p.c_name}, 가격: ${p.c_price}원`
+    ).join('\n');
+    
+    // Gemini에게 전달할 컨텍스트 생성
+    const context = `다음은 현재 판매 중인 CPU 상품 목록입니다:\n${productInfo}\n\n사용자 질문: ${prompt}\n\n위 상품 목록을 참고하여 답변해주세요.`;
+    
     // 기본 Gemini 응답 생성
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(context);
     return result.response.text();
   } catch (error) {
     console.error('Gemini response error:', error);
