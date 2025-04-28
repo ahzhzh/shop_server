@@ -33,18 +33,36 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 상품 목록 조회 API
 app.get('/api/products', async (req, res) => {
-  const [rows] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
-  res.json(rows);
+  try {
+    const [vgaProducts] = await pool.query('SELECT v_id, v_name, v_price FROM vga_tb');
+    const [cpuProducts] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
+    
+    res.json({
+      vga: vgaProducts,
+      cpu: cpuProducts
+    });
+  } catch (error) {
+    console.error('Product fetch error:', error);
+    res.status(500).json({ error: 'Product fetch failed' });
+  }
 });
 
 app.get('/api/products/search', async (req, res) => {
   const productName = req.query.name;
   try {
-    const [rows] = await pool.query(
+    const [vgaProducts] = await pool.query(
+      'SELECT v_id, v_name, v_price FROM vga_tb WHERE v_name LIKE ?',
+      [`%${productName}%`]
+    );
+    const [cpuProducts] = await pool.query(
       'SELECT c_id, c_name, c_price FROM cpu_tb WHERE c_name LIKE ?',
       [`%${productName}%`]
     );
-    res.json(rows);
+    
+    res.json({
+      vga: vgaProducts,
+      cpu: cpuProducts
+    });
   } catch (error) {
     console.error('Product search error:', error);
     res.status(500).json({ error: 'Product search failed' });
@@ -52,7 +70,7 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('your key');
+const genAI = new GoogleGenerativeAI('your api key');
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Google Cloud 클라이언트 초기화
@@ -87,6 +105,12 @@ async function generateGeminiResponse(prompt) {
   try {
     // 모든 텍스트를 소문자로 변환하여 비교
     const lowerPrompt = prompt.toLowerCase();
+    
+    // 상품 정보 페이지 이동 명령어 처리
+    if ((lowerPrompt.includes('정보') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘') || lowerPrompt.includes('페이지')) 
+        && (lowerPrompt.includes('상품') || lowerPrompt.includes('제품'))) {
+      return "네, 해당 상품의 상세 정보 페이지로 이동하겠습니다.";
+    }
     
     // 음성 인식 종료 명령어 처리
     if (prompt.includes('꺼 줘') || prompt.includes('종료') || prompt.includes('그만')) {
@@ -133,15 +157,20 @@ async function generateGeminiResponse(prompt) {
     }
     
     // 데이터베이스에서 상품 정보 가져오기
-    const [products] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
+    const [vgaProducts] = await pool.query('SELECT v_id, v_name, v_price FROM vga_tb');
+    const [cpuProducts] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
     
     // 상품 정보를 문자열로 변환
-    const productInfo = products.map(p => 
-      `상품명: ${p.c_name}, 가격: ${p.c_price}원`
+    const vgaInfo = vgaProducts.map(p => 
+      `[VGA] 상품명: ${p.v_name}, 가격: ${p.v_price}원`
+    ).join('\n');
+    
+    const cpuInfo = cpuProducts.map(p => 
+      `[CPU] 상품명: ${p.c_name}, 가격: ${p.c_price}원`
     ).join('\n');
     
     // Gemini에게 전달할 컨텍스트 생성
-    const context = `다음은 현재 판매 중인 CPU 상품 목록입니다:\n${productInfo}\n\n사용자 질문: ${prompt}\n\n위 상품 목록을 참고하여 답변해주세요.`;
+    const context = `다음은 현재 판매 중인 상품 목록입니다:\n\n${vgaInfo}\n\n${cpuInfo}\n\n사용자 질문: ${prompt}\n\n위 상품 목록을 참고하여 답변해주세요.`;
     
     // 기본 Gemini 응답 생성
     const result = await model.generateContent(context);
