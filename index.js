@@ -70,7 +70,7 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('your api key');
+const genAI = new GoogleGenerativeAI('your key');
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Google Cloud 클라이언트 초기화
@@ -106,10 +106,20 @@ async function generateGeminiResponse(prompt) {
     // 모든 텍스트를 소문자로 변환하여 비교
     const lowerPrompt = prompt.toLowerCase();
     
-    // 상품 정보 페이지 이동 명령어 처리
-    if ((lowerPrompt.includes('정보') || lowerPrompt.includes('보여줘') || lowerPrompt.includes('알려줘') || lowerPrompt.includes('페이지')) 
-        && (lowerPrompt.includes('상품') || lowerPrompt.includes('제품'))) {
-      return "네, 해당 상품의 상세 정보 페이지로 이동하겠습니다.";
+    // 장바구니 관련 명령어 처리
+    if (lowerPrompt.includes('장바구니')) {
+      if (lowerPrompt.includes('열어 줘') || lowerPrompt.includes('보여 줘') || 
+          lowerPrompt.includes('확인') || lowerPrompt.includes('이동')) {
+        return "네, 장바구니 페이지로 이동하겠습니다.";
+      }
+    }
+    
+    // 전체 카테고리 관련 명령어 처리
+    if (lowerPrompt.includes('전체') && lowerPrompt.includes('카테고리')) {
+      if (lowerPrompt.includes('보여 줘') || lowerPrompt.includes('열어 줘') || 
+          lowerPrompt.includes('이동') || lowerPrompt.includes('가줘')) {
+        return "네, 전체 카테고리로 이동하겠습니다.";
+      }
     }
     
     // 음성 인식 종료 명령어 처리
@@ -130,6 +140,11 @@ async function generateGeminiResponse(prompt) {
       return "네, 이전 페이지로 이동하겠습니다.";
     }
     
+    // 체크 관련 명령어 처리
+    if (lowerPrompt.includes('체크') || lowerPrompt.includes('체크해 줘') || lowerPrompt.includes('확인해줘')) {
+      return "네, 알겠습니다.";
+    }
+    
     // 결제 관련 명령어 처리
     if (lowerPrompt.includes('결제')) {
       if (lowerPrompt.includes('페이지') || lowerPrompt.includes('이동')) {
@@ -146,34 +161,42 @@ async function generateGeminiResponse(prompt) {
       }
     }
     
-    // NEW 섹션 명령어 처리
-    if (lowerPrompt.includes('new') || lowerPrompt.includes('뉴') || lowerPrompt.includes('새로운')) {
-      return "네, NEW 섹션으로 이동하겠습니다.";
+    // 그래픽카드 섹션 명령어 처리
+    if (lowerPrompt.includes('그래픽카드') || lowerPrompt.includes('그래픽')) {
+      return "네, 그래픽카드 섹션으로 이동하겠습니다.";
     }
     
-    // 인기 상품 섹션 명령어 처리
-    if (lowerPrompt.includes('인기') || lowerPrompt.includes('인기상품') || lowerPrompt.includes('인기 상품')) {
-      return "네, 인기 상품 섹션으로 이동하겠습니다.";
+    // cpu 섹션 명령어 처리
+    if (lowerPrompt.includes('CPU') || lowerPrompt.includes('씨피유')) {
+      return "네, CPU 섹션으로 이동하겠습니다.";
     }
     
-    // 데이터베이스에서 상품 정보 가져오기
-    const [vgaProducts] = await pool.query('SELECT v_id, v_name, v_price FROM vga_tb');
-    const [cpuProducts] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
-    
-    // 상품 정보를 문자열로 변환
-    const vgaInfo = vgaProducts.map(p => 
-      `[VGA] 상품명: ${p.v_name}, 가격: ${p.v_price}원`
-    ).join('\n');
-    
-    const cpuInfo = cpuProducts.map(p => 
-      `[CPU] 상품명: ${p.c_name}, 가격: ${p.c_price}원`
-    ).join('\n');
-    
-    // Gemini에게 전달할 컨텍스트 생성
-    const context = `다음은 현재 판매 중인 상품 목록입니다:\n\n${vgaInfo}\n\n${cpuInfo}\n\n사용자 질문: ${prompt}\n\n위 상품 목록을 참고하여 답변해주세요.`;
+    // 상품 정보나 가격 관련 질문인 경우에만 데이터베이스 조회
+    if (lowerPrompt.includes('가격') || lowerPrompt.includes('얼마') || 
+        lowerPrompt.includes('정보') || lowerPrompt.includes('상품')) {
+      // 데이터베이스에서 상품 정보 가져오기
+      const [vgaProducts] = await pool.query('SELECT v_id, v_name, v_price FROM vga_tb');
+      const [cpuProducts] = await pool.query('SELECT c_id, c_name, c_price FROM cpu_tb');
+      
+      // 상품 정보를 문자열로 변환
+      const vgaInfo = vgaProducts.map(p => 
+        `[VGA] 상품명: ${p.v_name}, 가격: ${p.v_price}원`
+      ).join('\n');
+      
+      const cpuInfo = cpuProducts.map(p => 
+        `[CPU] 상품명: ${p.c_name}, 가격: ${p.c_price}원`
+      ).join('\n');
+      
+      // Gemini에게 전달할 컨텍스트 생성
+      const context = `다음은 현재 판매 중인 상품 목록입니다:\n\n${vgaInfo}\n\n${cpuInfo}\n\n사용자 질문: ${prompt}\n\n위 상품 목록을 참고하여 답변해주세요.`;
+      
+      // 기본 Gemini 응답 생성
+      const result = await model.generateContent(context);
+      return result.response.text();
+    }
     
     // 기본 Gemini 응답 생성
-    const result = await model.generateContent(context);
+    const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
     console.error('Gemini response error:', error);
