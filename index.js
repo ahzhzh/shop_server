@@ -235,12 +235,12 @@ async function generateGeminiResponse(prompt, ws) {
       
       if (currentProductsInfo) {
         const context = `${baseContext}현재 표시된 제품 목록을 기반으로 답변해주세요. 친근하게 답변해주세요.`;
-        const result = await model.generateContent(context);
+        const result = await model.generateContent(context + "답변은 2-3문장으로 간단하게 해주세요.");
         return result.response.text();
       }
       
       const context = `${baseContext}전체 상품 목록을 기반으로 답변해주세요. 친근하게 답변해주세요.`;
-      const result = await model.generateContent(context);
+      const result = await model.generateContent(context + "답변은 2-3문장으로 간단하게 해주세요.");
       return result.response.text();
     }
     
@@ -293,7 +293,7 @@ async function generateGeminiResponse(prompt, ws) {
     }
     
     const context = `${baseContext}일반적인 대화입니다. 친근하게 답변해주세요.`;
-    const result = await model.generateContent(context);
+    const result = await model.generateContent(context + "답변은 2-3문장으로 간단하게 해주세요.");
     return result.response.text();
   } catch (error) {
     console.error('Gemini response error:', error);
@@ -323,6 +323,8 @@ wss.on('connection', (ws) => {
       const data = JSON.parse(message.toString());
       
       if (data.type === 'productState') {
+        // 상품 목록 로그 출력
+        console.log('클라이언트에서 전달받은 상품 목록:', data.currentProducts);
         productStates.set(ws, {
           currentProducts: data.currentProducts,
           selectedFilters: data.selectedFilters,
