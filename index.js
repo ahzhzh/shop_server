@@ -120,7 +120,7 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('AIzaSyCHfeZ12aVkUkoNWf0j4H3S9ING3JjjhTc'); 
+const genAI = new GoogleGenerativeAI('your key'); 
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Google Cloud 클라이언트 초기화
@@ -259,8 +259,6 @@ async function generateGeminiResponse(prompt, wz) {
     console.log('=== AI 응답 생성 로그 ===');
     console.log('1. 클라이언트에서 전달받은 상품 목록:', productState?.currentProducts);
     console.log('2. AI에게 전달되는 currentProductsInfo:', currentProductsInfo);
-    console.log('3. Gemini에게 전달되는 전체 프롬프트:', baseContext);
-    console.log('========================');
 
     if (lowerPrompt.includes('가격') || lowerPrompt.includes('얼마') || 
         lowerPrompt.includes('정보') || lowerPrompt.includes('상품') ||
@@ -359,7 +357,7 @@ wzz.on('connection', (wz) => {
       
       if (data.type === 'productState') {
         // 상품 목록 로그 출력
-        console.log('클라이언트에서 전달받은 상품 목록:', data.currentProducts);
+        
         productStates.set(wz, {
           currentProducts: data.currentProducts,
           selectedFilters: data.selectedFilters,
