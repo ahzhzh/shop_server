@@ -183,15 +183,15 @@ async function generateGeminiResponse(prompt, wz) {
     const lowerPrompt = prompt.toLowerCase();
     
     const productState = productStates.get(wz);
-    console.log('현재 productState:', productState); // 디버깅용 로그 추가
+     // 디버깅용 로그 추가
     
     let currentProductsInfo = '';
     if (productState && productState.currentProducts && productState.currentProducts.length > 0) {
-      console.log('처리할 제품 목록:', productState.currentProducts); // 디버깅용 로그 추가
+       // 디버깅용 로그 추가
       
       currentProductsInfo = productState.currentProducts
         .map((product) => {
-          console.log('개별 제품 데이터:', product); // 디버깅용 로그 추가
+           // 디버깅용 로그 추가
           
           // product가 객체인지 확인
           if (typeof product !== 'object' || product === null) {
@@ -257,7 +257,7 @@ async function generateGeminiResponse(prompt, wz) {
     
     // 상세 로깅 추가
     console.log('=== AI 응답 생성 로그 ===');
-    console.log('1. 클라이언트에서 전달받은 상품 목록:', productState?.currentProducts);
+    
     console.log('2. AI에게 전달되는 currentProductsInfo:', currentProductsInfo);
 
     if (lowerPrompt.includes('가격') || lowerPrompt.includes('얼마') || 
