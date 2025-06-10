@@ -120,7 +120,7 @@ app.get('/api/products/search', async (req, res) => {
 });
 
 //Gemini API 초기화
-const genAI = new GoogleGenerativeAI('your key'); 
+const genAI = new GoogleGenerativeAI('AIzaSyCHfeZ12aVkUkoNWf0j4H3S9ING3JjjhTc'); 
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Google Cloud 클라이언트 초기화
@@ -309,6 +309,11 @@ async function generateGeminiResponse(prompt, wz) {
     if (lowerPrompt.includes('체크') || lowerPrompt.includes('확인해') || lowerPrompt.includes('확인해줘')) {
       return "네, 알겠습니다.";
     }
+    
+    if (lowerPrompt.includes('그거')) {
+      return "네, 보여드리겠습니다.";
+    }
+    
     
     if (lowerPrompt.includes('결제')) {
       if (lowerPrompt.includes('페이지') || lowerPrompt.includes('이동')) {
